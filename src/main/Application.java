@@ -2,17 +2,20 @@ package main;
 
 import org.postgresql.Driver;
 
+import java.io.File;
 import java.sql.*;
+import java.util.Scanner;
 
 public class Application {
     public static void main(String[] args) throws SQLException {
         Connection c = null;
         try {
             Class.forName("org.postgresql.Driver");
-            Driver driver = new Driver();
+            Scanner passwordScanner = new Scanner(new File("password.txt"));
+            String password = passwordScanner.nextLine();
             c = DriverManager
                     .getConnection("jdbc:postgresql://elmer.db.elephantsql.com:5432/lherrbcv",
-                            "lherrbcv", "password");
+                            "lherrbcv", password);
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
