@@ -31,7 +31,19 @@ public class Application{
         }
         System.out.println("Opened database successfully");
         QueriesImplementation queries = new QueriesImplementation(c);
-        queries.query3();
+        System.out.println("Enter the number of query:");
+        Scanner queryScanner = new Scanner(System.in);
+        int queryNumber = queryScanner.nextInt();
+        switch (queryNumber) {
+            case 1:
+                queries.query1("shoot");
+                break;
+            case 3:
+                queries.query3();
+                break;
+            default:
+                System.out.println("Next time enter number from 1 to 10.");
+        }
         c.close();
     }
 
