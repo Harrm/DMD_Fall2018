@@ -82,14 +82,26 @@ public class QueriesImplementation implements Queries {
         resultSet.beforeFirst();
         return resultSet;
     }
-//    String sql = "WITH cte AS \n" +
-//            "(SELECT h::time " +
-//            "FROM generate_series(TIMESTAMP '2000-01-01 00:00', " +
-//            "TIMESTAMP '2000-01-01 00:00', " +
-//            "INTERVAL  '1 hour') t(h)) " +
-//            "SELECT EXTRACT(HOUR FROM start_time) AS \"time\" " +
-//            "FROM taxi_service.charge " +
-//            "LEFT JOIN cte ON h = EXTRACT(HOUR FROM start_time) " +
-//            "WHERE date(start_time) = '" + date.toString() + "' " +
-//            "GROUP BY EXTRACT(HOUR FROM start_time);";
+
+    @Override
+    public ResultSet query5(LocalDate date) throws SQLException {
+        Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        String sql = "SELECT sum(distance_to_order_location) / count(distinct license_plate) as \"Average distance to pick up point\", " +
+                "avg(arrival_time - departure_time) as \"average trip duration\" " +
+                "FROM taxi_service.ride as r " +
+                "WHERE departure_time::date = '" + date.toString() + "';";
+        ResultSet resultSet = s.executeQuery(sql);
+        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+        }
+        System.out.println();
+        while (resultSet.next()) {
+            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                System.out.print(resultSet.getString(i + 1) + " ");
+            }
+            System.out.println();
+        }
+        resultSet.beforeFirst();
+        return resultSet;
+    }
 }
