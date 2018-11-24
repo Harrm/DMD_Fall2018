@@ -10,7 +10,7 @@ public class QueriesImplementation implements Queries {
 
     private Connection connection;
 
-    public QueriesImplementation(Connection connection) {
+    QueriesImplementation(Connection connection) {
         this.connection = connection;
     }
 
@@ -38,7 +38,7 @@ public class QueriesImplementation implements Queries {
 
     public ResultSet query2(LocalDate date) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        String sql = "SELECT h::time as \"time\", count(DISTINCT socket_id) as total " +
+        String sql = "SELECT concat(to_char(h, 'HH24:MI'), 'h-', to_char(h + '1 hour', 'HH24:MI'), 'h') as \"time\", count(DISTINCT socket_id) as total " +
                 "FROM generate_series(timestamp '2000-01-01 00:00', timestamp '2000-01-01 23:59', interval '1 hour') as h " +
                 "LEFT JOIN (SELECT start_time, socket_id FROM taxi_service.charge WHERE start_time::DATE = '" + date.toString() + "')" +
                 "AS c ON EXTRACT(HOUR FROM h) = EXTRACT(HOUR FROM start_time) " +
