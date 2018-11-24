@@ -2,6 +2,7 @@ package main;
 
 import java.io.File;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Application{
@@ -37,6 +38,9 @@ public class Application{
         switch (queryNumber) {
             case 1:
                 queries.query1("shoot");
+                break;
+            case 2:
+                queries.query2(LocalDate.of(2018, 11, 22));
                 break;
             case 3:
                 queries.query3();
