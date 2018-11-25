@@ -158,9 +158,40 @@ public class QueriesImplementation implements Queries {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         String sql = "SELECT username, count(*) FROM (SELECT DISTINCT username, license_plate, start_time\n" +
                 "FROM taxi_service.ride\n" +
-                "  JOIN taxi_service.charge ON license_plate = car AND departure_time::date = start_time::date\n" +
+                "  JOIN taxi_service.charge ON license_plate = license_plate AND departure_time::date = start_time::date\n" +
                 "WHERE age(ride.departure_time, '" + date.toString() + "') BETWEEN '0 days' AND '30 days') as tab\n" +
                 "GROUP BY username;";
+        ResultSet resultSet = s.executeQuery(sql);
+        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+        }
+        System.out.println();
+        while (resultSet.next()) {
+            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                System.out.print(resultSet.getString(i + 1) + " ");
+            }
+            System.out.println();
+        }
+        resultSet.beforeFirst();
+        return resultSet;
+    }
+
+    @Override
+    public ResultSet query10() throws SQLException {
+        Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        String sql = "SELECT name as \"Car model\", sum(price) / 365 / count(DISTINCT license_plate) as \"Average maintance cost during last year\" " +
+                "FROM taxi_service.car_model " +
+                "       JOIN taxi_service.car ON car_model.id = car.model " +
+                "       JOIN " +
+                "       (SELECT license_plate, price " +
+                "        FROM taxi_service.charge " +
+                "        WHERE age(start_time) < '1 year' " +
+                "        UNION " +
+                "        SELECT license_plate, price " +
+                "        FROM taxi_service.repairment " +
+                "        WHERE age(start_time) < '1 year') as tbl " +
+                "       USING (license_plate) " +
+                "GROUP BY id;";
         ResultSet resultSet = s.executeQuery(sql);
         for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
             System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
