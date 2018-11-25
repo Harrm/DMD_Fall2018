@@ -2,13 +2,14 @@ package main;
 
 import java.io.File;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.Scanner;
 
-public class Application {
+public class Application{
 
-    private static Connection c = null;
 
     public static void main(String[] args) throws SQLException {
+        Connection c = null;
         try {
             Class.forName("org.postgresql.Driver");
             String password = null;
@@ -30,30 +31,42 @@ public class Application {
             System.exit(0);
         }
         System.out.println("Opened database successfully");
-        query1("shoot");
+        QueriesImplementation queries = new QueriesImplementation(c);
+        System.out.println("Enter the number of query:");
+        Scanner queryScanner = new Scanner(System.in);
+        int queryNumber = queryScanner.nextInt();
+        switch (queryNumber) {
+            case 1:
+                queries.query1("shoot");
+                break;
+            case 2:
+                queries.query2(LocalDate.of(2018, 11, 22));
+                break;
+            case 3:
+                queries.query3();
+                break;
+            case 4:
+                queries.query4("shoot");
+                break;
+            case 5:
+                queries.query5(LocalDate.of(2018, 11, 22));
+                break;
+            case 7:
+                queries.query7();
+                break;
+            case 8:
+                queries.query8(LocalDate.of(2018, 10, 24));
+                break;
+            case 9:
+                queries.query9();
+                break;
+            case 10:
+                queries.query10();
+                break;
+            default:
+                System.out.println("Next time enter number from 1 to 10.");
+        }
         c.close();
-    }
-
-    private static ResultSet query1(String username) throws SQLException {
-        Statement s = c.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        String sql = "SELECT *\n" +
-                "FROM taxi_service.customer as c\n" +
-                "       JOIN taxi_service.ride as r ON c.username = '" + username + "' AND r.customer = c.username " +
-                "       AND r.car LIKE 'AN%' AND date(r.order_time) = '2018-11-23'\n" +
-                "       JOIN taxi_service.car ON car.license_plate = r.car AND car.color = 'red';";
-        ResultSet resultSet = s.executeQuery(sql);
-        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
-            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
-        }
-        System.out.println();
-        while (resultSet.next()) {
-            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
-                System.out.print(resultSet.getString(i + 1) + " ");
-            }
-            System.out.println();
-        }
-        resultSet.beforeFirst();
-        return resultSet;
     }
 
 }
