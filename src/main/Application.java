@@ -22,7 +22,7 @@ public class Application{
                 System.exit(0);
             }
             c = DriverManager
-                    .getConnection("jdbc:postgresql://elmer.db.elephantsql.com:5432/lherrbcv",
+                    .getConnection("jdbc:postgresql://elmer.db.elephantsql.com:5432/lherrbcv?allowMultiQueries=true",
                             "lherrbcv", password);
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,6 +49,9 @@ public class Application{
                 break;
             case 5:
                 queries.query5(LocalDate.of(2018, 11, 22));
+                break;
+            case 6:
+                queries.query6();
                 break;
             case 7:
                 queries.query7();

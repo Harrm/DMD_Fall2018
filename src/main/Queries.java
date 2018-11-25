@@ -15,7 +15,7 @@ public interface Queries {
 
     ResultSet query5(LocalDate date) throws SQLException;
 
-    //     ResultSet query6() throws SQLException;
+    ResultSet query6() throws SQLException;
 
     ResultSet query7() throws SQLException;
 
