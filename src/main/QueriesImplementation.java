@@ -87,6 +87,27 @@ public class QueriesImplementation implements Queries {
     }
 
     @Override
+    public ResultSet query4(String username) throws SQLException {
+        Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        String sql = "SELECT p1.*, p2.real_bank_receipt_id as \"doubling receipt\" FROM taxi_service.payment as p1 " +
+                "JOIN taxi_service.payment as p2 ON p1.username = p2.username AND p1.amount = p2.amount AND p1 .real_bank_receipt_id < p2.real_bank_receipt_id " +
+                "WHERE p1.username = '" + username + "';";
+        ResultSet resultSet = s.executeQuery(sql);
+        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+        }
+        System.out.println();
+        while (resultSet.next()) {
+            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                System.out.print(resultSet.getString(i + 1) + " ");
+            }
+            System.out.println();
+        }
+        resultSet.beforeFirst();
+        return resultSet;
+    }
+
+    @Override
     public ResultSet query5(LocalDate date) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         String sql = "SELECT sum(distance_to_order_location) / count(distinct license_plate) as \"Average distance to pick up point\", " +

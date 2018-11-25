@@ -45,6 +45,9 @@ public class Application{
             case 3:
                 queries.query3();
                 break;
+            case 4:
+                queries.query4("shoot");
+                break;
             case 5:
                 queries.query5(LocalDate.of(2018, 11, 22));
                 break;
