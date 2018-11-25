@@ -20,6 +20,7 @@ public interface Queries {
 
     ResultSet query8(LocalDate date) throws SQLException;
 
-    //     ResultSet query9() throws SQLException;
+    ResultSet query9() throws SQLException;
+
     ResultSet query10() throws SQLException;
 }

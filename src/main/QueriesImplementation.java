@@ -17,10 +17,10 @@ public class QueriesImplementation implements Queries {
     @Override
     public ResultSet query1(String username) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        String sql = "SELECT *\n" +
-                "FROM taxi_service.customer as c\n" +
+        String sql = "SELECT * " +
+                "FROM taxi_service.customer as c " +
                 "       JOIN taxi_service.ride as r ON c.username = '" + username + "' AND r.username = c.username " +
-                "       AND r.license_plate LIKE 'AN%' AND date(r.order_time) = '2018-11-23'\n" +
+                "       AND r.license_plate LIKE 'AN%' AND date(r.order_time) = '2018-11-23' " +
                 "       JOIN taxi_service.car ON car.license_plate = r.license_plate AND car.color = 'red';";
         ResultSet resultSet = s.executeQuery(sql);
         for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
@@ -132,11 +132,11 @@ public class QueriesImplementation implements Queries {
     @Override
     public ResultSet query7() throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        String sql = "SELECT license_plate, count(*)\n" +
-                "FROM taxi_service.ride\n" +
-                "WHERE age(departure_time) < '3 months'\n" +
-                "GROUP BY (license_plate)\n" +
-                "ORDER BY count(*)\n" +
+        String sql = "SELECT license_plate, count(*) " +
+                "FROM taxi_service.ride " +
+                "WHERE age(departure_time) < '3 months' " +
+                "GROUP BY (license_plate) " +
+                "ORDER BY count(*) " +
                 "LIMIT (SELECT count(*) FROM taxi_service.car) / 10;";
         ResultSet resultSet = s.executeQuery(sql);
         for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
@@ -156,11 +156,39 @@ public class QueriesImplementation implements Queries {
     @Override
     public ResultSet query8(LocalDate date) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        String sql = "SELECT username, count(*) FROM (SELECT DISTINCT username, license_plate, start_time\n" +
-                "FROM taxi_service.ride\n" +
-                "  JOIN taxi_service.charge ON license_plate = license_plate AND departure_time::date = start_time::date\n" +
-                "WHERE age(ride.departure_time, '" + date.toString() + "') BETWEEN '0 days' AND '30 days') as tab\n" +
+        String sql = "SELECT username, count(*) FROM (SELECT DISTINCT username, license_plate, start_time " +
+                "FROM taxi_service.ride " +
+                "  JOIN taxi_service.charge ON license_plate = license_plate AND departure_time::date = start_time::date " +
+                "WHERE age(ride.departure_time, '" + date.toString() + "') BETWEEN '0 days' AND '30 days') as tab " +
                 "GROUP BY username;";
+        ResultSet resultSet = s.executeQuery(sql);
+        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+        }
+        System.out.println();
+        while (resultSet.next()) {
+            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                System.out.print(resultSet.getString(i + 1) + " ");
+            }
+            System.out.println();
+        }
+        resultSet.beforeFirst();
+        return resultSet;
+    }
+
+    @Override
+    public ResultSet query9() throws SQLException {
+        Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        String sql = "SELECT workshop_id, part_id, average_quantity " +
+                "FROM (SELECT ROW_NUMBER() over (partition by repairment.workshop_id ORDER BY sum(quantity)) as rating, " +
+                "             repairment.workshop_id, " +
+                "             part_id, " +
+                "             sum(quantity) / 52 as average_quantity " +
+                "      FROM taxi_service.used_parts " +
+                "             JOIN taxi_service.repairment ON used_parts.repairment_id = repairment.id " +
+                "      WHERE age(start_time) < '1 year' " +
+                "      GROUP BY (repairment.workshop_id, part_id)) t " +
+                "WHERE rating = 1; ";
         ResultSet resultSet = s.executeQuery(sql);
         for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
             System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
