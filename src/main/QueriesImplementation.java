@@ -14,6 +14,7 @@ public class QueriesImplementation implements Queries {
         this.connection = connection;
     }
 
+    @Override
     public ResultSet query1(String username) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         String sql = "SELECT *\n" +
@@ -36,6 +37,7 @@ public class QueriesImplementation implements Queries {
         return resultSet;
     }
 
+    @Override
     public ResultSet query2(LocalDate date) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         String sql = "SELECT concat(to_char(h, 'HH24:MI'), 'h-', to_char(h + '1 hour', 'HH24:MI'), 'h') as \"time\", count(DISTINCT socket_id) as total " +
@@ -58,6 +60,7 @@ public class QueriesImplementation implements Queries {
         return resultSet;
     }
 
+    @Override
     public ResultSet query3() throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         String sql = "SELECT * FROM (SELECT  100 * count(DISTINCT r.license_plate) / (SELECT count(*) FROM taxi_service.car) as \"Morning\" FROM taxi_service.ride as r " +
@@ -90,6 +93,30 @@ public class QueriesImplementation implements Queries {
                 "avg(arrival_time - departure_time) as \"Average trip duration\" " +
                 "FROM taxi_service.ride as r " +
                 "WHERE departure_time::date = '" + date.toString() + "' AND arrival_time IS NOT NULL;";
+        ResultSet resultSet = s.executeQuery(sql);
+        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+        }
+        System.out.println();
+        while (resultSet.next()) {
+            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                System.out.print(resultSet.getString(i + 1) + " ");
+            }
+            System.out.println();
+        }
+        resultSet.beforeFirst();
+        return resultSet;
+    }
+
+    @Override
+    public ResultSet query7() throws SQLException {
+        Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        String sql = "SELECT license_plate, count(*)\n" +
+                "FROM taxi_service.ride\n" +
+                "WHERE age(departure_time) < '3 months'\n" +
+                "GROUP BY (license_plate)\n" +
+                "ORDER BY count(*)\n" +
+                "LIMIT (SELECT count(*) FROM taxi_service.car) / 10;";
         ResultSet resultSet = s.executeQuery(sql);
         for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
             System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
