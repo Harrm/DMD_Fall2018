@@ -48,6 +48,9 @@ public class Application{
             case 5:
                 queries.query5(LocalDate.of(2018, 11, 22));
                 break;
+            case 8:
+                queries.query8(LocalDate.of(2018, 10, 24));
+                break;
             default:
                 System.out.println("Next time enter number from 1 to 10.");
         }

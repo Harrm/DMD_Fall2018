@@ -12,7 +12,7 @@ public interface Queries {
     ResultSet query5(LocalDate date) throws SQLException;
 //    public ResultSet query6() throws SQLException;
 //    public ResultSet query7() throws SQLException;
-//    public ResultSet query8() throws SQLException;
+    public ResultSet query8(LocalDate date) throws SQLException;
 //    public ResultSet query9() throws SQLException;
 //    public ResultSet query10() throws SQLException;
 }

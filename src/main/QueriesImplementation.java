@@ -87,9 +87,32 @@ public class QueriesImplementation implements Queries {
     public ResultSet query5(LocalDate date) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         String sql = "SELECT sum(distance_to_order_location) / count(distinct license_plate) as \"Average distance to pick up point\", " +
-                "avg(arrival_time - departure_time) as \"average trip duration\" " +
+                "avg(arrival_time - departure_time) as \"Average trip duration\" " +
                 "FROM taxi_service.ride as r " +
-                "WHERE departure_time::date = '" + date.toString() + "';";
+                "WHERE departure_time::date = '" + date.toString() + "' AND arrival_time IS NOT NULL;";
+        ResultSet resultSet = s.executeQuery(sql);
+        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+        }
+        System.out.println();
+        while (resultSet.next()) {
+            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                System.out.print(resultSet.getString(i + 1) + " ");
+            }
+            System.out.println();
+        }
+        resultSet.beforeFirst();
+        return resultSet;
+    }
+
+    @Override
+    public ResultSet query8(LocalDate date) throws SQLException {
+        Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        String sql = "SELECT username, count(*) FROM (SELECT DISTINCT username, license_plate, start_time\n" +
+                "FROM taxi_service.ride\n" +
+                "  JOIN taxi_service.charge ON license_plate = car AND departure_time::date = start_time::date\n" +
+                "WHERE age(ride.departure_time, '" + date.toString() + "') BETWEEN '0 days' AND '30 days') as tab\n" +
+                "GROUP BY username;";
         ResultSet resultSet = s.executeQuery(sql);
         for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
             System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
