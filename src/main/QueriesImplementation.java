@@ -16,19 +16,27 @@ public class QueriesImplementation implements Queries {
 
     private ResultSet executePrintReturn(String sql) throws SQLException {
         Statement s = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        ResultSet resultSet = s.executeQuery(sql);
-        for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
-            System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
-        }
-        System.out.println();
-        while (resultSet.next()) {
-            for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
-                System.out.print(resultSet.getString(i + 1) + " ");
+        boolean hasMoreResultSets = s.execute(sql);
+        ResultSet resultSet = null;
+        while ( hasMoreResultSets || s.getUpdateCount() != -1 ) {
+            if (hasMoreResultSets) {
+                resultSet = s.getResultSet();
+                for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                    System.out.print(resultSet.getMetaData().getColumnName(i + 1) + " ");
+                }
+                System.out.println();
+                while (resultSet.next()) {
+                    for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                        System.out.print(resultSet.getString(i + 1) + " ");
+                    }
+                    System.out.println();
+                }
+                resultSet.beforeFirst();
+                return resultSet;
             }
-            System.out.println();
+            hasMoreResultSets = s.getMoreResults();
         }
-        resultSet.beforeFirst();
-        return resultSet;
+        return null;
     }
 
     @Override
@@ -43,11 +51,16 @@ public class QueriesImplementation implements Queries {
 
     @Override
     public ResultSet query2(LocalDate date) throws SQLException {
-        String sql = "SELECT concat(to_char(h, 'HH24:MI'), 'h-', to_char(h + '1 hour', 'HH24:MI'), 'h') as \"time\", count(DISTINCT socket_id) as total " +
-                "FROM generate_series(timestamp '2000-01-01 00:00', timestamp '2000-01-01 23:59', interval '1 hour') as h " +
-                "LEFT JOIN (SELECT start_time, socket_id FROM taxi_service.charge WHERE start_time::DATE = '" + date.toString() + "')" +
-                "AS c ON EXTRACT(HOUR FROM h) = EXTRACT(HOUR FROM start_time) " +
-                "GROUP BY h;";
+        String sql = "CREATE TEMPORARY TABLE result(\"time\" VARCHAR(100), total int);\n" +
+                "DO $$ BEGIN\n" +
+                "FOR h IN 0..23 LOOP\n" +
+                "  INSERT INTO result\n" +
+                "   SELECT concat(to_char('00:00'::time + h * interval '1 hour', 'HH24:MI'), 'h-', to_char('00:00'::time + (h + 1) * interval '1 hour', 'HH24:MI'), 'h') as \"time\", count(DISTINCT socket_id) as total\n" +
+                "          FROM taxi_service.charge WHERE start_time < '" + date.toString() + " 00:00'::timestamp + (h + 1) * interval '1 hour' and finish_time >'" + date.toString() + " 00:00'::timestamp + h * interval '1 hour';\n" +
+                "          END LOOP;\n" +
+                "END$$;\n" +
+                "SELECT * FROM result;\n" +
+                "DROP TABLE result;";
         return executePrintReturn(sql);
     }
 
@@ -147,9 +160,9 @@ public class QueriesImplementation implements Queries {
 
     @Override
     public ResultSet query8(LocalDate date) throws SQLException {
-        String sql = "SELECT username, count(*) FROM (SELECT DISTINCT username, license_plate, start_time " +
+        String sql = "SELECT username, count(*) FROM (SELECT DISTINCT username, ride.license_plate, start_time " +
                 "FROM taxi_service.ride " +
-                "  JOIN taxi_service.charge ON license_plate = license_plate AND departure_time::date = start_time::date " +
+                "  JOIN taxi_service.charge ON ride.license_plate = charge.license_plate AND departure_time::date = start_time::date " +
                 "WHERE age(ride.departure_time, '" + date.toString() + "') BETWEEN '0 days' AND '30 days') as tab " +
                 "GROUP BY username;";
         return executePrintReturn(sql);

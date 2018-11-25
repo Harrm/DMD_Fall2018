@@ -23,7 +23,7 @@ public class Application{
                 System.exit(0);
             }
             c = DriverManager
-                    .getConnection("jdbc:postgresql://elmer.db.elephantsql.com:5432/lherrbcv",
+                    .getConnection("jdbc:postgresql://elmer.db.elephantsql.com:5432/lherrbcv?allowMultiQueries=true",
                             "lherrbcv", password);
         } catch (Exception e) {
             e.printStackTrace();
