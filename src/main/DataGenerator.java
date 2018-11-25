@@ -10,6 +10,32 @@ import java.util.*;
 
 class DataGenerator {
 
+    public static void main(String[] args) {
+        Connection c = null;
+        try {
+            String password = null;
+            try {
+                Scanner passwordScanner = new Scanner(new File("password.txt"));
+                password = passwordScanner.nextLine();
+                if (password == null) throw new Exception("Add password.txt file with password");
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(0);
+            }
+            c = DriverManager
+                    .getConnection("jdbc:postgresql://elmer.db.elephantsql.com:5432/lherrbcv",
+                            "lherrbcv", password);
+            DataGenerator dg = new DataGenerator(c);
+            dg.generateTestData();
+
+            c.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
+            System.exit(0);
+        }
+    }
+
     DataGenerator(Connection c) throws SQLException, FileNotFoundException {
         connection = c;
         insertEntityStatement = new HashMap<>();
@@ -53,6 +79,14 @@ class DataGenerator {
                 "INSERT INTO taxi_service.repairment" +
                         "(license_plate, workshop_id, start_time, end_time, description, price) " +
                         "VALUES (?, ?, ?, ?, ?, ?)"));
+        insertEntityStatement.put("part", connection.prepareStatement(
+                "INSERT INTO taxi_service.part" +
+                        "(name) " +
+                        "VALUES (?)"));
+        insertEntityStatement.put("used_part", connection.prepareStatement(
+                "INSERT INTO taxi_service.used_parts" +
+                        "(repairment_id, part_id, quantity) " +
+                        "VALUES (?, ?, ?)"));
         rand = new Random();
         updateNameList();
         updateCitiesList();
@@ -67,7 +101,23 @@ class DataGenerator {
         updateSocketList();
         updatePlugIdList();
         updateWorkshopIdList();
-        // generate here
+        updateRepairIdList();
+        updatePartIdList();
+
+        for(int i = 0; i < 15; i++) {
+            Point p = new Point();
+            p.x = rand.nextDouble() * rand.nextInt(100);
+            p.y = rand.nextDouble() * rand.nextInt(100);
+            locations.add(p);
+        }
+
+        for (int i = 0; i < 10000; i++) {
+            try{
+                generateUsedPart();
+            } catch(SQLException e) {
+
+            }
+        }
     }
 
     void generateCar() throws SQLException {
@@ -118,10 +168,13 @@ class DataGenerator {
         Timestamp order_time = nextTimestamp();
         Timestamp departure_time = Timestamp.from(order_time.toInstant().plus(rand.nextInt(30), ChronoUnit.MINUTES));
         Timestamp arrival_time = Timestamp.from(departure_time.toInstant().plus(rand.nextInt(24*60), ChronoUnit.MINUTES));
-        double departure_location_x = rand.nextDouble() * rand.nextInt(100);
-        double departure_location_y = rand.nextDouble() * rand.nextInt(100);
-        double arrival_location_x = rand.nextDouble() * rand.nextInt(100);
-        double arrival_location_y = rand.nextDouble() * rand.nextInt(100);
+        int i = rand.nextInt(locations.size());
+        Point departure_location = locations.get(i);
+        int i1 = rand.nextInt(locations.size());
+        while(i1 == i) {
+            i1 = rand.nextInt(locations.size());
+        }
+        Point arrival_location = locations.get(i1);
         double distance = rand.nextDouble() * rand.nextInt(10000);
         int receipt_id = rand.nextInt(100000);
 
@@ -132,10 +185,10 @@ class DataGenerator {
         s.setTimestamp(4, order_time);
         s.setTimestamp(5, departure_time);
         s.setTimestamp(6, arrival_time);
-        s.setDouble(7, departure_location_x);
-        s.setDouble(8, departure_location_y);
-        s.setDouble(9, arrival_location_x);
-        s.setDouble(10, arrival_location_y);
+        s.setDouble(7, departure_location.x);
+        s.setDouble(8, departure_location.y);
+        s.setDouble(9, arrival_location.x);
+        s.setDouble(10, arrival_location.y);
         s.setDouble(11, distance);
         s.setInt(12, receipt_id);
 
@@ -214,11 +267,31 @@ class DataGenerator {
         s.execute();
     }
 
+    void generatePart() throws SQLException {
+        String name = ""+nextChar()+nextChar()+nextChar()+rand.nextInt(1000);
+
+        PreparedStatement s = insertEntityStatement.get("part");
+        s.setString(1, name);
+        s.execute();
+    }
+
+    void generateUsedPart() throws SQLException {
+        int repairment_id = repairs.get(rand.nextInt(repairs.size()));
+        int part_id = part_ids.get(rand.nextInt(part_ids.size()));
+        int quantity = rand.nextInt(100);
+
+        PreparedStatement s = insertEntityStatement.get("used_part");
+        s.setInt(1, repairment_id);
+        s.setInt(2, part_id);
+        s.setInt(3, quantity);
+        s.execute();
+    }
+
     void generateCharge() throws SQLException {
         String car = licensePlates.get(rand.nextInt(licensePlates.size()));
         int socket_id = sockets.get(rand.nextInt(sockets.size()));
         ResultSet rs = connection.createStatement().executeQuery(
-                "SELECT price FROM taxi_service.charging_station, taxi_service.socket WHERE charging_station.id = socket.station_id and socket.id = "+socket_id);
+        "SELECT price FROM taxi_service.charging_station, taxi_service.socket WHERE charging_station.id = socket.station_id and socket.id = "+socket_id);
         rs.next();
         int station_price = rs.getInt("price");
         Timestamp start_time = nextTimestamp();
@@ -240,7 +313,7 @@ class DataGenerator {
     }
 
     private Timestamp nextTimestamp() {
-        int year = 2013 + rand.nextInt(6);
+        int year = 2018;
         int month = 1 + rand.nextInt(12);
         int day = 1 + rand.nextInt(28);
         int hour = rand.nextInt(24);
@@ -294,6 +367,24 @@ class DataGenerator {
         s.close();
     }
 
+    private void updateRepairIdList() throws SQLException {
+        Statement s = connection.createStatement();
+        ResultSet rs = s.executeQuery("SELECT id FROM taxi_service.repairment");
+        while(rs.next()) {
+            repairs.add(rs.getInt("id"));
+        }
+        s.close();
+    }
+
+    private void updatePartIdList() throws SQLException {
+        Statement s = connection.createStatement();
+        ResultSet rs = s.executeQuery("SELECT id FROM taxi_service.part");
+        while(rs.next()) {
+            part_ids.add(rs.getInt("id"));
+        }
+        s.close();
+    }
+
     private void updateStationIdList() throws SQLException {
         Statement s = connection.createStatement();
         ResultSet rs = s.executeQuery("SELECT id FROM taxi_service.charging_station");
@@ -333,12 +424,18 @@ class DataGenerator {
         }
     }
 
+    static class Point {
+        double x, y;
+    }
+
     private Connection connection;
     private HashMap<String, PreparedStatement> insertEntityStatement;
     private Random rand;
     private ArrayList<String> licensePlates = new ArrayList<>();
     private ArrayList<Integer> sockets = new ArrayList<>();
+    private ArrayList<Integer> part_ids = new ArrayList<>();
     private ArrayList<String> usernames = new ArrayList<>();
+    private ArrayList<Integer> repairs = new ArrayList<>();
     private ArrayList<Integer> workshops = new ArrayList<>();
     private ArrayList<Integer> models = new ArrayList<>();
     private ArrayList<Integer> plug_ids = new ArrayList<>();
@@ -346,5 +443,6 @@ class DataGenerator {
     private ArrayList<String> names = new ArrayList<>();
     private ArrayList<String> cities = new ArrayList<>();
     private ArrayList<String> makes = new ArrayList<>();
+    private ArrayList<Point> locations = new ArrayList<>();
     private String[] colors = new String[] {"red", "white", "black", "green", "yellow"};
 }

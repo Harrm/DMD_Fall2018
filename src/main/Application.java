@@ -11,7 +11,6 @@ public class Application{
     public static void main(String[] args) throws SQLException {
         Connection c = null;
         try {
-            Class.forName("org.postgresql.Driver");
             String password = null;
             try {
                 Scanner passwordScanner = new Scanner(new File("password.txt"));
