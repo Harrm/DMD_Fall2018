@@ -158,7 +158,7 @@ public class QueriesImplementation implements Queries {
     @Override
     public ResultSet query9() throws SQLException {
         String sql = "SELECT workshop_id, part_id, average_quantity " +
-                "FROM (SELECT ROW_NUMBER() over (partition by repairment.workshop_id ORDER BY sum(quantity)) as rating, " +
+                "FROM (SELECT ROW_NUMBER() over (partition by repairment.workshop_id ORDER BY sum(quantity) DESC) as rating, " +
                 "             repairment.workshop_id, " +
                 "             part_id, " +
                 "             sum(quantity) / 52 as average_quantity " +
